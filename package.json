@@ -1,0 +1,18 @@
+{
+  "name": "cameltan-personal-site",
+  "version": "1.0.0",
+  "description": "cameltan的个人展示单页面应用",
+  "main": "index.html",
+  "scripts": {
+    "build": "echo 'Static site - no build needed'"
+  },
+  "keywords": [
+    "personal",
+    "website",
+    "portfolio",
+    "ai-chat",
+    "deepseek"
+  ],
+  "author": "cameltan",
+  "license": "MIT"
+}
