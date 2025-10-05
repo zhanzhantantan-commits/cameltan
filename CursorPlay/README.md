@@ -38,7 +38,14 @@ CursorPlay/
 ├── index.html          # 主页面文件
 ├── styles.css          # 样式文件
 ├── script.js           # JavaScript功能文件
-└── README.md           # 说明文档
+├── package.json        # 项目配置文件
+├── vercel.json         # Vercel部署配置
+├── .gitignore          # Git忽略文件
+├── README.md           # 说明文档
+└── imgs/               # 图片资源文件夹
+    ├── 4.jpg
+    ├── 5.jpg
+    └── 能年玲奈.jpeg
 ```
 
 ## 使用方法
@@ -54,6 +61,32 @@ CursorPlay/
    # 使用Node.js serve包
    npx serve .
    ```
+
+### 🌐 Vercel部署
+
+项目已配置Vercel部署，支持一键部署：
+
+1. **GitHub部署**：
+   - 将代码推送到GitHub仓库
+   - 在Vercel中导入GitHub仓库
+   - 自动部署完成
+
+2. **命令行部署**：
+   ```bash
+   # 安装Vercel CLI
+   npm i -g vercel
+   
+   # 部署到Vercel
+   vercel
+   
+   # 生产环境部署
+   vercel --prod
+   ```
+
+3. **部署配置**：
+   - 已包含 `vercel.json` 配置文件
+   - 支持单页面应用路由
+   - 静态文件自动优化
 
 ### 🔑 DeepSeek API配置
 
