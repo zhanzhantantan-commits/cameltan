@@ -4,9 +4,8 @@
   "description": "cameltan的个人展示单页面应用",
   "main": "index.html",
   "scripts": {
-    "build": "echo 'Static site - no build needed'",
-    "start": "python3 -m http.server 8000",
-    "dev": "python3 -m http.server 8000"
+    "build": "echo 'No build step required for static site'",
+    "start": "serve -s ."
   },
   "keywords": [
     "personal",
@@ -16,8 +15,5 @@
     "deepseek"
   ],
   "author": "cameltan",
-  "license": "MIT",
-  "engines": {
-    "node": ">=14.0.0"
-  }
+  "license": "MIT"
 }
