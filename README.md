@@ -1,41 +1,34 @@
-# 星盘分析仪 · Celestial Chart
+# cameltan Personal Website
 
-基于天文学算法的在线星盘生成器，无需后端，纯前端实现。
+个人项目集合，按项目隔离管理。
 
-## 功能
+## 目录结构
 
-- 🌙 **十大星体位置**：太阳、月亮、水星、金星、火星、木星、土星、天王星、海王星、冥王星
-- 🏠 **十二宫位**：基于 Placidus 宫头系统计算
-- ⚡ **相位分析**：合相、冲相、刑克、拱相、六分
-- 🎨 **星盘轮盘图**：SVG 动态绘制，带行星符号、相位连线、宫位标注
-- 📝 **星座解读**：太阳、月亮、上升星座详解 + 元素能量分析
-
-## 算法
-
-- 儒略日（JD）计算
-- VSOP87 简化行星轨道模型
-- 月球ELP2000-82简化模型
-- Placidus 上升点 + 宫头计算
-- 真太阳与恒星时（GMT → LST → 地方时）
-
-## 运行
-
-直接用浏览器打开 `index.html` 即可使用，或本地启动服务：
-
-```bash
-python3 -m http.server 8080
-# 访问 http://localhost:8080
+```
+cameltan/
+├── projects/
+│   ├── star-chart/      ← 🌙 星盘分析器（纯前端天文计算）
+│   └── portfolio/       ← 📄 个人展示网站（个人主页）
+├── CursorPlay/          ← 🔄 轮播展示页历史副本
+├── cameltan-deploy/     ← 🚀 部署测试副本
+└── _shared/imgs/        ← 🖼️ 共享图片资源
 ```
 
-## 输入说明
+## 在线访问
 
-| 字段 | 说明 |
+| 项目 | 地址 |
 |------|------|
-| 出生日期 | 必填，格式 YYYY-MM-DD |
-| 出生时间 | 必填，精确到分钟 |
-| 纬度 / 经度 | 出生地坐标，可从地图查询 |
+| 星盘分析器 | https://cameltan.github.io/cameltan/projects/star-chart/ |
+| 个人主页 | https://cameltan.github.io/cameltan/ |
 
-常见城市坐标：
-- 上海：31.23°N, 121.47°E
-- 北京：39.90°N, 116.40°E
-- 深圳：22.54°N, 114.06°E
+（需在 GitHub Settings → Pages 启用）
+
+## 快速开发
+
+```bash
+# 个人主页
+cd projects/portfolio && python3 -m http.server 8080
+
+# 星盘分析器
+cd projects/star-chart && python3 -m http.server 8081
+```
