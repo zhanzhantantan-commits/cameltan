@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vercel部署测试</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 40px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        h1 { color: #2563eb; }
+        .status { color: #10b981; font-weight: bold; }
+        .test-links { margin: 20px 0; }
+        .test-links a {
+            display: inline-block;
+            margin: 10px;
+            padding: 10px 20px;
+            background: #2563eb;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎉 Vercel部署测试成功！</h1>
+        <p class="status">网站正在正常运行</p>
+        <p>如果您看到这个页面，说明Vercel配置正确。</p>
+        
+        <div class="test-links">
+            <a href="/">返回主页面</a>
+            <a href="/test.html">刷新测试页面</a>
+        </div>
+        
+        <h3>测试项目：</h3>
+        <ul style="text-align: left; max-width: 400px; margin: 0 auto;">
+            <li>✅ 静态文件服务</li>
+            <li>✅ HTML页面渲染</li>
+            <li>✅ CSS样式加载</li>
+            <li>✅ 路由重写功能</li>
+        </ul>
+    </div>
+</body>
+</html>
