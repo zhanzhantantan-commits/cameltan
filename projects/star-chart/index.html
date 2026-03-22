@@ -119,26 +119,26 @@ header .subtitle { font-size:12px; color:var(--cream-dim); letter-spacing:0.4em;
       <div class="field-row">
         <div class="field">
           <label>出生日期</label>
-          <input type="date" id="inp-date" />
+          <input type="date" id="inp-date" value="1994-10-09" />
         </div>
         <div class="field">
           <label>出生时间</label>
-          <input type="time" id="inp-time" />
+          <input type="time" id="inp-time" value="07:00" />
         </div>
       </div>
       <div class="time-note">精确出生时间可提高上升星座精度</div>
       <div class="field" style="margin-top:16px">
         <label>出生地点</label>
-        <input type="text" id="inp-place" placeholder="如：上海 / 北京" />
+        <input type="text" id="inp-place" placeholder="湖北" />
       </div>
       <div class="field-row" style="margin-top:4px">
         <div class="field">
           <label>纬度 (°)</label>
-          <input type="number" id="inp-lat" step="0.01" placeholder="31.23" />
+          <input type="number" id="inp-lat" step="0.01" value="29.81" />
         </div>
         <div class="field">
           <label>经度 (°)</label>
-          <input type="number" id="inp-lng" step="0.01" placeholder="121.47" />
+          <input type="number" id="inp-lng" step="0.01" value="111.63" />
         </div>
       </div>
       <button class="btn-generate" onclick="generateChart()">✦ 绘制星盘 ✦</button>
