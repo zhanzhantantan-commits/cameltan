@@ -1,0 +1,724 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>星盘分析仪 · Celestial Chart</title>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Noto+Serif+SC:wght@300;400;600&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg-deep: #03060f; --bg-mid: #080d1a; --bg-card: rgba(12,18,38,0.85);
+  --gold: #d4a847; --gold-dim: rgba(212,168,71,0.4); --gold-bright: #f0c962;
+  --cream: #e8dcc8; --cream-dim: rgba(232,220,200,0.55);
+  --violet: #8b6fc6; --violet-dim: rgba(139,111,198,0.3);
+  --blue: #4a9eff; --red: #c04040; --green: #40a060; --orange: #c08030; --cyan: #60b0c0;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family:'Cormorant Garamond','Noto Serif SC',serif; background:var(--bg-deep); color:var(--cream); min-height:100vh; overflow-x:hidden; }
+
+.starfield { position:fixed; inset:0; z-index:0; pointer-events:none; }
+.star { position:absolute; border-radius:50%; background:white; animation:twinkle var(--d,3s) ease-in-out infinite alternate; }
+@keyframes twinkle { 0%{opacity:0.1;transform:scale(0.8)} 100%{opacity:0.9;transform:scale(1.2)} }
+
+.nebula { position:fixed; inset:0; z-index:0; pointer-events:none;
+  background:
+    radial-gradient(ellipse 60%40% at 15%20%,rgba(139,111,198,0.07)0%,transparent 70%),
+    radial-gradient(ellipse 50%60% at 85%75%,rgba(74,158,255,0.06)0%,transparent 70%),
+    radial-gradient(ellipse 40%30% at 50%50%,rgba(212,168,71,0.04)0%,transparent 70%); }
+
+.app { position:relative; z-index:1; min-height:100vh; }
+
+header { text-align:center; padding:48px 20px 24px; }
+header .title { font-family:'Cinzel',serif; font-size:clamp(22px,4vw,38px); font-weight:600; color:var(--gold); letter-spacing:0.2em; text-shadow:0 0 40px rgba(212,168,71,0.4); }
+header .subtitle { font-size:12px; color:var(--cream-dim); letter-spacing:0.4em; margin-top:8px; text-transform:uppercase; }
+.divider { width:60px; height:1px; background:linear-gradient(90deg,transparent,var(--gold),transparent); margin:0 auto; }
+
+.main-layout { display:flex; flex-wrap:wrap; justify-content:center; gap:28px; padding:20px 24px 60px; max-width:1200px; margin:0 auto; }
+
+.form-card { background:var(--bg-card); border:1px solid var(--gold-dim); border-radius:16px; padding:32px; width:340px; flex-shrink:0; backdrop-filter:blur(12px); box-shadow:0 8px 40px rgba(0,0,0,0.5),inset 0 1px 0 rgba(212,168,71,0.1); }
+.form-card h2 { font-family:'Cinzel',serif; font-size:12px; letter-spacing:0.3em; color:var(--gold); margin-bottom:24px; text-transform:uppercase; }
+.field { margin-bottom:18px; }
+.field label { display:block; font-size:10px; letter-spacing:0.2em; color:var(--cream-dim); text-transform:uppercase; margin-bottom:6px; }
+.field input { width:100%; background:rgba(255,255,255,0.04); border:1px solid rgba(212,168,71,0.2); border-radius:8px; padding:10px 14px; color:var(--cream); font-family:'Cormorant Garamond',serif; font-size:16px; outline:none; transition:border-color 0.3s,box-shadow 0.3s; }
+.field input:focus { border-color:var(--gold); box-shadow:0 0 16px rgba(212,168,71,0.15); }
+.field input::placeholder { color:rgba(232,220,200,0.25); }
+.field-row { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+.time-note { font-size:10px; color:rgba(232,220,200,0.3); margin-top:4px; font-style:italic; }
+.btn-generate { width:100%; padding:14px; background:linear-gradient(135deg,rgba(212,168,71,0.2),rgba(212,168,71,0.05)); border:1px solid var(--gold); border-radius:10px; color:var(--gold); font-family:'Cinzel',serif; font-size:11px; letter-spacing:0.25em; text-transform:uppercase; cursor:pointer; transition:all 0.4s; margin-top:8px; }
+.btn-generate:hover { background:linear-gradient(135deg,rgba(212,168,71,0.35),rgba(212,168,71,0.15)); box-shadow:0 0 30px rgba(212,168,71,0.25); transform:translateY(-1px); }
+
+.chart-area { display:flex; flex-direction:column; align-items:center; gap:24px; min-height:600px; }
+.chart-placeholder { width:440px; height:440px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:16px; border:1px dashed rgba(212,168,71,0.2); border-radius:50%; color:var(--cream-dim); font-family:'Cinzel',serif; font-size:12px; letter-spacing:0.2em; text-transform:uppercase; transition:all 0.6s; }
+.chart-placeholder .icon { font-size:48px; opacity:0.3; }
+
+.wheel-container { position:relative; }
+.wheel-svg { width:460px; height:460px; overflow:visible; }
+
+.results-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; width:100%; max-width:940px; }
+.results-section { background:var(--bg-card); border:1px solid rgba(212,168,71,0.15); border-radius:16px; padding:24px; backdrop-filter:blur(10px); }
+.results-section h3 { font-family:'Cinzel',serif; font-size:10px; letter-spacing:0.3em; color:var(--gold); text-transform:uppercase; margin-bottom:16px; padding-bottom:10px; border-bottom:1px solid rgba(212,168,71,0.15); }
+
+.planet-row { display:flex; align-items:center; gap:8px; margin-bottom:8px; padding:5px 8px; border-radius:6px; transition:background 0.2s; }
+.planet-row:hover { background:rgba(212,168,71,0.06); }
+.planet-row .sym { font-size:20px; width:28px; text-align:center; flex-shrink:0; }
+.planet-row .pname { font-size:11px; color:var(--cream-dim); width:44px; flex-shrink:0; }
+.planet-row .psign { font-size:14px; color:var(--cream); flex:1; }
+.planet-row .pdeg { font-size:13px; color:var(--gold); min-width:52px; text-align:right; }
+.planet-row .phouse { font-size:10px; color:var(--violet); min-width:20px; text-align:right; }
+
+.core-trio { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin-bottom:16px; }
+.core-item { text-align:center; padding:14px 8px; background:rgba(255,255,255,0.03); border-radius:10px; border:1px solid rgba(212,168,71,0.1); }
+.core-item .ci-label { font-size:9px; letter-spacing:0.3em; text-transform:uppercase; color:var(--cream-dim); margin-bottom:4px; }
+.core-item .ci-value { font-size:18px; color:var(--gold); font-family:'Cinzel',serif; }
+.core-item .ci-detail { font-size:12px; color:var(--cream-dim); margin-top:2px; }
+
+.aspects-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+.aspect-chip { display:flex; align-items:center; gap:6px; padding:5px 10px; border-radius:20px; font-size:12px; border:1px solid; }
+.aspect-chip.conj{background:rgba(212,168,71,0.15);border-color:rgba(212,168,71,0.4);color:var(--gold)}
+.aspect-chip.opp {background:rgba(192,64,64,0.12);border-color:rgba(192,64,64,0.4);color:#e07070}
+.aspect-chip.sqr {background:rgba(192,64,64,0.10);border-color:rgba(192,64,64,0.3);color:#d08080}
+.aspect-chip.tri {background:rgba(64,160,96,0.12);border-color:rgba(64,160,96,0.4);color:#70c090}
+.aspect-chip.sext{background:rgba(74,158,255,0.12);border-color:rgba(74,158,255,0.3);color:#80b0f0}
+.aspect-chip .a-names { font-size:11px; opacity:0.8; }
+.aspect-chip .a-orb { font-size:10px; opacity:0.6; margin-left:auto; }
+
+.interp-section { background:var(--bg-card); border:1px solid rgba(212,168,71,0.15); border-radius:16px; padding:28px 32px; max-width:940px; width:100%; backdrop-filter:blur(10px); }
+.interp-section h3 { font-family:'Cinzel',serif; font-size:10px; letter-spacing:0.3em; color:var(--gold); text-transform:uppercase; margin-bottom:20px; }
+.interp-block { margin-bottom:16px; }
+.interp-block h4 { font-size:13px; color:var(--gold-dim); margin-bottom:6px; font-weight:400; }
+.interp-block p { font-size:15px; line-height:1.9; color:rgba(232,220,200,0.78); font-family:'Noto Serif SC','Cormorant Garamond',serif; }
+
+@keyframes fadeUp { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:translateY(0)} }
+.fade-up { animation:fadeUp 0.6s ease-out forwards; }
+.hidden { display:none !important; }
+
+@media(max-width:900px){ .results-grid{grid-template-columns:1fr} .wheel-container,.chart-placeholder{width:360px;height:360px} .wheel-svg{width:360px;height:360px} }
+@media(max-width:500px){ .form-card{width:100%} .wheel-container,.chart-placeholder{width:300px;height:300px} .wheel-svg{width:300px;height:300px} .aspects-grid{grid-template-columns:1fr} }
+</style>
+</head>
+<body>
+
+<div class="starfield" id="starfield"></div>
+<div class="nebula"></div>
+
+<div class="app">
+  <header>
+    <div class="title">星盘分析仪</div>
+    <div class="subtitle">Celestial Chart · Natal Analysis</div>
+    <div style="height:8px"></div>
+    <div class="divider"></div>
+  </header>
+
+  <div class="main-layout">
+    <div class="form-card">
+      <h2>出生信息</h2>
+      <div class="field">
+        <label>姓名</label>
+        <input type="text" id="inp-name" placeholder="你的名字" />
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label>出生日期</label>
+          <input type="date" id="inp-date" />
+        </div>
+        <div class="field">
+          <label>出生时间</label>
+          <input type="time" id="inp-time" />
+        </div>
+      </div>
+      <div class="time-note">精确出生时间可提高上升星座精度</div>
+      <div class="field" style="margin-top:16px">
+        <label>出生地点</label>
+        <input type="text" id="inp-place" placeholder="如：上海 / 北京" />
+      </div>
+      <div class="field-row" style="margin-top:4px">
+        <div class="field">
+          <label>纬度 (°)</label>
+          <input type="number" id="inp-lat" step="0.01" placeholder="31.23" />
+        </div>
+        <div class="field">
+          <label>经度 (°)</label>
+          <input type="number" id="inp-lng" step="0.01" placeholder="121.47" />
+        </div>
+      </div>
+      <button class="btn-generate" onclick="generateChart()">✦ 绘制星盘 ✦</button>
+    </div>
+
+    <div class="chart-area">
+      <div class="chart-placeholder" id="placeholder">
+        <div class="icon">☽</div>
+        <div>输入信息<br>生成你的星盘</div>
+      </div>
+
+      <div class="wheel-container hidden" id="wheel-container">
+        <svg class="wheel-svg" id="wheel-svg" viewBox="-230 -230 460 460"></svg>
+      </div>
+
+      <div class="results-grid hidden" id="results-grid">
+        <div class="results-section" style="grid-column:1/-1">
+          <div class="core-trio" id="core-trio"></div>
+          <h3>主要相位</h3>
+          <div class="aspects-grid" id="aspects-grid"></div>
+        </div>
+        <div class="results-section" style="grid-column:1/-1">
+          <h3>十大星体位置</h3>
+          <div id="planets-list"></div>
+        </div>
+      </div>
+
+      <div class="interp-section hidden" id="interp-section">
+        <h3>星盘解读</h3>
+        <div id="interp-content"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ════════════════════════════════════════════
+//  STAR FIELD
+// ════════════════════════════════════════════
+(function(){
+  const sf = document.getElementById('starfield');
+  for(let i=0;i<180;i++){
+    const s=document.createElement('div');
+    s.className='star';
+    const size=Math.random()*2+0.5;
+    s.style.cssText=`left:${Math.random()*100}%;top:${Math.random()*100}%;width:${size}px;height:${size}px;--d:${(Math.random()*4+2).toFixed(1)}s;animation-delay:${(Math.random()*5).toFixed(1)}s`;
+    sf.appendChild(s);
+  }
+})();
+
+// ════════════════════════════════════════════
+//  CONSTANTS
+// ════════════════════════════════════════════
+const SIGNS_CN=['白羊','金牛','双子','巨蟹','狮子','处女','天秤','天蝎','射手','摩羯','水瓶','双鱼'];
+const SIGN_SYM=['♈','♉','♊','♋','♌','♍','♎','♏','♐','♑','♒','♓'];
+const PLANETS=['sun','moon','mercury','venus','mars','jupiter','saturn','uranus','neptune','pluto'];
+const PLANET_CN={sun:'太阳',moon:'月亮',mercury:'水星',venus:'金星',mars:'火星',jupiter:'木星',saturn:'土星',uranus:'天王星',neptune:'海王星',pluto:'冥王星'};
+const PLANET_SYM={sun:'☉',moon:'☽',mercury:'☿',venus:'♀',mars:'♂',jupiter:'♃',saturn:'♄',uranus:'♅',neptune:'♆',pluto:'♇'};
+const PLANET_COL={sun:'#d4a847',moon:'#e8dcc8',mercury:'#a0a0b0',venus:'#e09060',mars:'#c04040',jupiter:'#c08030',saturn:'#60b0c0',uranus:'#60c0d0',neptune:'#4060c0',pluto:'#906090'};
+
+const ASPECTS_DEF=[
+  {name:'conj',deg:0,sym:'☌',orb:10,cls:'conj'},
+  {name:'opp', deg:180,sym:'☍',orb:10,cls:'opp'},
+  {name:'sqr', deg:90, sym:'□', orb:8, cls:'sqr'},
+  {name:'tri', deg:120,sym:'△',orb:6, cls:'tri'},
+  {name:'sext',deg:60, sym:'⚹',orb:5, cls:'sext'},
+];
+
+// ─── Coordinate Math ───
+function jdToJD(y,m,d,h,mi,s){if(m<=2){y-=1;m+=12}const A=Math.floor(y/100),B=2-A+Math.floor(A/4);return Math.floor(365.25*(y+4716))+Math.floor(30.6001*(m+1))+d+B-1524.5+(h+mi/60+s/3600)/24}
+function julianCentury(jd){return (jd-2451545.0)/36525.0}
+
+function getMeanLongitudes(T){
+  return{
+    sun:    (280.46646+36000.76983*T+0.0003032*T*T)%360,
+    moon:   (218.3164591+481267.88134236*T-0.001133*T*T)%360,
+    mercury:(252.250906+149472.67462*T+0.000304*T*T)%360,
+    venus:  (181.979801+58517.81567*T+0.000310*T*T)%360,
+    mars:   (355.432999+19140.29933*T+0.000310*T*T)%360,
+    jupiter:(34.351519+3034.90524*T-0.005324*T*T)%360,
+    saturn: (50.077444+1222.11379*T+0.000210*T*T)%360,
+    uranus: (314.055000+428.46690*T-0.000009*T*T)%360,
+    neptune:(304.348665+218.48620*T+0.000181*T*T)%360,
+  };
+}
+function getMeanAnomalies(T){
+  return{
+    sun:    (357.529109+35999.050290*T-0.000154*T*T)%360,
+    moon:   (134.963411+477198.867631*T+0.008721*T*T)%360,
+    mercury:(174.794307+4.093237*T+0.000193*T*T)%360,
+    venus:  (34.351665+58517.81565*T+0.000302*T*T)%360,
+    mars:   (355.428503+19140.05479*T+0.000244*T*T)%360,
+    jupiter:(34.334791+3034.35669*T-0.002203*T*T)%360,
+    saturn: (50.077444+1222.11379*T+0.000210*T*T)%360,
+    uranus: (314.055000+428.46690*T-0.000009*T*T)%360,
+    neptune:(304.348665+218.48620*T+0.000181*T*T)%360,
+  };
+}
+function getObliquity(T){
+  const eps0=23.439291-0.013004*T-0.00000016*T*T+0.000000504*T*T*T;
+  const omega=(125.04-1934.136*T)*Math.PI/180;
+  return eps0-0.00569-0.00478*Math.sin(omega);
+}
+function getGMST(jd){
+  const T=(jd-2451545.0)/36525;
+  let g=280.46061837+360.98564736629*(jd-2451545.0)+0.000387933*T*T-T*T*T/38710000;
+  return((g%360)+360)%360;
+}
+function getSiderealTime(jd,lng){return(getGMST(jd)+lng)%360}
+function getPlanetaryLonLat(name,ML,M,T){
+  if(name==='moon'){
+    const Mm=M.moon*Math.PI/180;
+    const l=ML.moon*Math.PI/180;
+    const F=(93.272099+483202.017527*T)*Math.PI/180;
+    const om=(125.04452-1934.136*T)*Math.PI/180;
+    const mSun=M.sun*Math.PI/180;
+    const lon=ML.moon+6.289*Math.sin(Mm)+1.274*Math.sin(2*l-Mm)+0.658*Math.sin(2*l)+0.214*Math.sin(2*Mm)-0.186*Math.sin(mSun)-0.114*Math.sin(2*F);
+    const lat=5.128*Math.sin(F)+0.281*Math.sin(Mm+F)+0.278*Math.sin(Mm-F);
+    return[(lon*180/Math.PI+360)%360,lat*180/Math.PI];
+  }else{
+    const eccs={sun:0.016708634,venus:0.006773,mercury:0.205630,venus_b:0.0067,mars:0.093405,jupiter:0.048392,saturn:0.054546,uranus:0.047218,neptune:0.008606};
+    const e=eccs[name]||0.05;
+    const a_vals={mercury:0.387098,venus:0.723330,earth:1.00000,mars:1.523688,jupiter:5.20336,saturn:9.53714,uranus:19.189,neptune:30.069};
+    const a=a_vals[name]||1;
+    const m=M[name]*Math.PI/180;
+    const E=m+e*Math.sin(m)*(1+e*Math.cos(m));
+    const xv=a*(Math.cos(E)-e);
+    const yv=a*Math.sqrt(1-e*e)*Math.sin(E);
+    const v=Math.atan2(yv,xv);
+    // For Earth, return Sun's position (we use Earth's orbital elements)
+    if(name==='earth'||name==='sun'){
+      return[(v*180/Math.PI+360)%360,0];
+    }
+    return[(v*180/Math.PI+360)%360,0];
+  }
+}
+function getHouses(sidT,lng,lat,T){
+  // Placidus house system using proper astrometric formulas
+  const phi=lat*Math.PI/180;
+  const ob=getObliquity(T)*Math.PI/180;
+  const lst=sidT*Math.PI/180;
+  const houses=[];
+  // MC/IC from LST
+  const sinMC=Math.sin(lst);
+  const cosMC=Math.cos(lst)*Math.cos(ob)-Math.sin(lst)*Math.tan(phi)*Math.sin(ob);
+  const mc=(Math.atan2(sinMC,cosMC)*180/Math.PI+360)%360;
+  // Ascendant from LST
+  const cosAsc=-Math.cos(lst)*Math.cos(ob)-Math.sin(lst)*Math.tan(phi)*Math.sin(ob);
+  const sinAsc=Math.sin(lst);
+  const asc=(Math.atan2(sinAsc,cosAsc)*180/Math.PI+360)%360;
+  // Full house set using Placidus semi-arc method
+  houses[0]=asc;
+  houses[9]=mc;
+  houses[6]=(mc+180)%360;
+  houses[3]=(asc+180)%360;
+  for(let i=1;i<=5;i++){
+    const arc=i*30;
+    const arcRad=arc*Math.PI/180;
+    // Compute declination of ecliptic point at arc
+    const sinDec=Math.sin(ob)*Math.sin(arcRad);
+    const cosDec=Math.cos(arcRad);
+    // Hour angle needed
+    const tanHA=-Math.cos(arcRad)*Math.cos(ob)/(Math.cos(phi)*Math.sin(arcRad)*Math.sin(ob)+Math.sin(phi)*Math.cos(arcRad));
+    const ha=Math.atan(tanHA);
+    // House cusp in RA space
+    const RA_cusp=(lst+ha)*180/Math.PI;
+    // Convert RA to ecliptic longitude using obliquity
+    const RA=RA_cusp*Math.PI/180;
+    const Dec=Math.asin(sinDec);
+    const sinLon=Math.sin(RA)*Math.cos(ob)+Math.tan(Dec)*Math.sin(ob);
+    const cosLon=Math.cos(RA);
+    houses[i]=(Math.atan2(sinLon,cosLon)*180/Math.PI+360)%360;
+    houses[i+6]=(houses[i]+180)%360;
+  }
+  return houses;
+}
+function lonToSign(lon){return[Math.floor(lon/30)%12,lon%30]}
+function degToWheel(deg){return deg*Math.PI/180-Math.PI/2}
+
+// ─── Sun ecliptic ───
+function getSunEclipticLon(T){
+  const L0=(280.46646+36000.76983*T)%360;
+  const m=(357.529109+35999.050290*T)*Math.PI/180;
+  const c=(1.914602-0.004817*T)*Math.sin(m)+0.019993*Math.sin(2*m);
+  return(L0+c+360)%360;
+}
+function getSunGeocentricLon(T){return getSunEclipticLon(T)}
+
+// ─── Main calculation ───
+function calculateChart(dateStr,timeStr,lat,lng){
+  const[year,month,day]=dateStr.split('-').map(Number);
+  const[hour,min]=timeStr.split(':').map(Number);
+  const sec=0;
+  const jd=jdToJD(year,month,day,hour,min,sec);
+  const T=julianCentury(jd);
+  const obliquity=getObliquity(T);
+  const sidT=getSiderealTime(jd,lng);
+  const houses=getHouses(sidT,lng,lat,T);
+
+  const ML=getMeanLongitudes(T);
+  const M=getMeanAnomalies(T);
+
+  // Compute Sun geocentric longitude (opposite of Earth's orbital position)
+  const sunLon=getSunEclipticLon(T);
+  const positions={};
+  for(const name of PLANETS){
+    if(name==='sun'){positions.sun={lon:sunLon,lat:0};continue}
+    const[lon,lat2]=getPlanetaryLonLat(name,ML,M,T);
+    // For outer planets: heliocentric lon ≈ geocentric lon
+    // For inner planets: geocentric correction
+    if(['mercury','venus'].includes(name)){
+      const earthLon=getSunEclipticLon(T);
+      const geoLon=(lon-earthLon+360)%360;
+      positions[name]={lon:geoLon,lat:lat2};
+    }else{
+      positions[name]={lon,lat:lat2};
+    }
+  }
+  // Moon - use full planetary function which has the correct latitude/longitude
+  const[moonLon,moonLat]=getPlanetaryLonLat('moon',ML,M,T);
+  positions.moon={lon:moonLon,lat:moonLat};
+
+  // Find house for each planet
+  function findHouse(lon){
+    for(let i=0;i<12;i++){
+      const next=(i+1)%12;
+      const a=houses[i],b=houses[next];
+      if(next===0){if((lon>=a||lon<b))return i+1}else{if(lon>=a&&lon<b)return i+1}
+    }
+    return 12;
+  }
+
+  const results=PLANETS.map(name=>{
+    const pos=positions[name];
+    const[signIdx,deg]=lonToSign(pos.lon);
+    return{name,lon:pos.lon,lat:pos.lat,sign:signIdx,deg,house:findHouse(pos.lon)};
+  });
+
+  // Compute aspects
+  const aspects=[];
+  const pnames=['sun','moon','mercury','venus','mars','jupiter','saturn'];
+  for(let i=0;i<pnames.length;i++){
+    for(let j=i+1;j<pnames.length;j++){
+      const p1=results.find(r=>r.name===pnames[i]);
+      const p2=results.find(r=>r.name===pnames[j]);
+      if(!p1||!p2)continue;
+      let diff=Math.abs(p1.lon-p2.lon);
+      if(diff>180)diff=360-diff;
+      for(const asp of ASPECTS_DEF){
+        if(Math.abs(diff-asp.deg)<=asp.orb){
+          aspects.push({p1:pnames[i],p2:pnames[j],type:asp.name,orb:Math.abs(diff-asp.deg),sym:asp.sym,cls:asp.cls});
+        }
+      }
+    }
+  }
+
+  // Core trio
+  const sun=results.find(r=>r.name==='sun');
+  const moon=results.find(r=>r.name==='moon');
+  const ascHouse=houses[0];
+  const[ascSign,ascDeg]=lonToSign(ascHouse);
+
+  return{positions:results,aspects,sun,moon,houses,ascendant:{lon:ascHouse,sign:ascSign,deg:ascDeg},mc:houses[9]};
+}
+
+// ─── SVG Drawing ───
+function drawWheel(data,svgEl){
+  const NS='http://www.w3.org/2000/svg';
+  svgEl.innerHTML='';
+
+  const R=220,R2=210,R3=200,R4=180,R5=155,R_inner=120;
+
+  // Outer glow circle
+  const glow=document.createElementNS(NS,'circle');
+  glow.setAttribute('cx',0);glow.setAttribute('cy',0);glow.setAttribute('r',R+15);
+  glow.setAttribute('fill','none');glow.setAttribute('stroke','rgba(212,168,71,0.08)');
+  glow.setAttribute('stroke-width','30');
+  svgEl.appendChild(glow);
+
+  // Outer ring
+  const ring=document.createElementNS(NS,'circle');
+  ring.setAttribute('cx',0);ring.setAttribute('cy',0);ring.setAttribute('r',R);
+  ring.setAttribute('fill','none');ring.setAttribute('stroke','rgba(212,168,71,0.5)');
+  ring.setAttribute('stroke-width','1.5');
+  svgEl.appendChild(ring);
+
+  // House circles (inner)
+  for(let i=0;i<12;i++){
+    const a1=degToWheel(i*30);
+    const a2=degToWheel((i+1)*30);
+    const x1a=(R_inner*Math.cos(a1)),y1a=(R_inner*Math.sin(a1));
+    const x2a=(R_inner*Math.cos(a2)),y2a=(R_inner*Math.sin(a2));
+    const x1b=(R4*Math.cos(a1)),y1b=(R4*Math.sin(a1));
+    const x2b=(R4*Math.cos(a2)),y2b=(R4*Math.sin(a2));
+    const arc=document.createElementNS(NS,'path');
+    const large=(a2-a1>Math.PI)?1:0;
+    arc.setAttribute('d',`M ${x1a.toFixed(2)} ${y1a.toFixed(2)} L ${x1b.toFixed(2)} ${y1b.toFixed(2)} A ${R4} ${R4} 0 ${large} 1 ${x2b.toFixed(2)} ${y2b.toFixed(2)} L ${x2a.toFixed(2)} ${y2a.toFixed(2)} A ${R_inner} ${R_inner} 0 ${large} 0 ${x1a.toFixed(2)} ${y1a.toFixed(2)}`);
+    arc.setAttribute('fill',i%2===0?'rgba(255,255,255,0.015)':'rgba(255,255,255,0.008)');
+    arc.setAttribute('stroke','rgba(212,168,71,0.12)');
+    arc.setAttribute('stroke-width','1');
+    svgEl.appendChild(arc);
+  }
+
+  // Sign arcs
+  const signRing=document.createElementNS(NS,'circle');
+  signRing.setAttribute('cx',0);signRing.setAttribute('cy',0);signRing.setAttribute('r',R4);
+  signRing.setAttribute('fill','none');signRing.setAttribute('stroke','rgba(212,168,71,0.2)');
+  signRing.setAttribute('stroke-width','1');
+  svgEl.appendChild(signRing);
+
+  // Planet ring
+  const pRing=document.createElementNS(NS,'circle');
+  pRing.setAttribute('cx',0);pRing.setAttribute('cy',0);pRing.setAttribute('r',R5);
+  pRing.setAttribute('fill','none');pRing.setAttribute('stroke','rgba(212,168,71,0.3)');
+  pRing.setAttribute('stroke-width','0.8');
+  svgEl.appendChild(pRing);
+
+  // Inner ring
+  const innerRing=document.createElementNS(NS,'circle');
+  innerRing.setAttribute('cx',0);innerRing.setAttribute('cy',0);innerRing.setAttribute('r',R_inner);
+  innerRing.setAttribute('fill','rgba(8,13,26,0.7)');innerRing.setAttribute('stroke','rgba(212,168,71,0.4)');
+  innerRing.setAttribute('stroke-width','1');
+  svgEl.appendChild(innerRing);
+
+  // Center decoration
+  const centerDec=document.createElementNS(NS,'circle');
+  centerDec.setAttribute('cx',0);centerDec.setAttribute('cy',0);centerDec.setAttribute('r',8);
+  centerDec.setAttribute('fill','none');centerDec.setAttribute('stroke','rgba(212,168,71,0.6)');
+  centerDec.setAttribute('stroke-width','1');
+  svgEl.appendChild(centerDec);
+
+  const dot=document.createElementNS(NS,'circle');
+  dot.setAttribute('cx',0);dot.setAttribute('cy',0);dot.setAttribute('r',3);
+  dot.setAttribute('fill','rgba(212,168,71,0.8)');
+  svgEl.appendChild(dot);
+
+  // Sign labels
+  for(let i=0;i<12;i++){
+    const midLon=i*30+15;
+    const a=degToWheel(midLon);
+    const rx=R3+8,ry=R3;
+    const x=rx*Math.cos(a),y=ry*Math.sin(a);
+    const g=document.createElementNS(NS,'g');
+    const symTxt=document.createElementNS(NS,'text');
+    symTxt.setAttribute('x',x);symTxt.setAttribute('y',y+5);
+    symTxt.setAttribute('text-anchor','middle');symTxt.setAttribute('font-size','14');
+    symTxt.setAttribute('fill','rgba(232,220,200,0.6)');symTxt.setAttribute('font-family','serif');
+    symTxt.textContent=SIGN_SYM[i];
+    g.appendChild(symTxt);
+    svgEl.appendChild(g);
+  }
+
+  // House cusp lines
+  for(let i=0;i<12;i++){
+    const a=degToWheel(i*30);
+    const x1=(R+5)*Math.cos(a),y1=(R+5)*Math.sin(a);
+    const x2=(R_inner-2)*Math.cos(a),y2=(R_inner-2)*Math.sin(a);
+    const line=document.createElementNS(NS,'line');
+    line.setAttribute('x1',x1.toFixed(2));line.setAttribute('y1',y1.toFixed(2));
+    line.setAttribute('x2',x2.toFixed(2));line.setAttribute('y2',y2.toFixed(2));
+    line.setAttribute('stroke','rgba(212,168,71,0.25)');
+    line.setAttribute('stroke-width','1');
+    svgEl.appendChild(line);
+  }
+
+  // Houses numbering
+  for(let i=0;i<12;i++){
+    const a=degToWheel(i*30+15);
+    const x=(R-12)*Math.cos(a),y=(R-12)*Math.sin(a);
+    const txt=document.createElementNS(NS,'text');
+    txt.setAttribute('x',x);txt.setAttribute('y',y+4);
+    txt.setAttribute('text-anchor','middle');
+    txt.setAttribute('font-size','9');
+    txt.setAttribute('fill','rgba(139,111,198,0.8)');
+    txt.setAttribute('font-family',"'Cinzel',serif");
+    txt.textContent=i+1;
+    svgEl.appendChild(txt);
+  }
+
+  // Planet glyphs
+  const pGlyphs={};
+  for(const pos of data.positions){
+    const a=degToWheel(pos.lon);
+    const pr=R5;
+    const x=pr*Math.cos(a),y=pr*Math.sin(a);
+    const g=document.createElementNS(NS,'g');
+    const circ=document.createElementNS(NS,'circle');
+    circ.setAttribute('cx',x);circ.setAttribute('cy',y);circ.setAttribute('r',11);
+    circ.setAttribute('fill','rgba(8,13,26,0.9)');
+    circ.setAttribute('stroke',PLANET_COL[pos.name]);
+    circ.setAttribute('stroke-width','1.5');
+    g.appendChild(circ);
+    const sym=document.createElementNS(NS,'text');
+    sym.setAttribute('x',x);sym.setAttribute('y',y+5);
+    sym.setAttribute('text-anchor','middle');sym.setAttribute('font-size','13');
+    sym.setAttribute('fill',PLANET_COL[pos.name]);
+    sym.setAttribute('font-family','serif');
+    sym.textContent=PLANET_SYM[pos.name];
+    g.appendChild(sym);
+    svgEl.appendChild(g);
+    pGlyphs[pos.name]={x,y};
+  }
+
+  // Aspect lines
+  for(const asp of data.aspects){
+    const p1=pGlyphs[asp.p1],p2=pGlyphs[asp.p2];
+    if(!p1||!p2)continue;
+    const line=document.createElementNS(NS,'line');
+    line.setAttribute('x1',p1.x.toFixed(1));line.setAttribute('y1',p1.y.toFixed(1));
+    line.setAttribute('x2',p2.x.toFixed(1));line.setAttribute('y2',p2.y.toFixed(1));
+    const colors={conj:'rgba(212,168,71,0.5)',opp:'rgba(192,64,64,0.5)',sqr:'rgba(192,64,64,0.4)',tri:'rgba(64,160,96,0.4)',sext:'rgba(74,158,255,0.35)'};
+    line.setAttribute('stroke',colors[asp.cls]||'rgba(255,255,255,0.2)');
+    line.setAttribute('stroke-width',asp.cls==='conj'?'2':asp.cls==='opp'||asp.cls==='sqr'?'1.5':'1');
+    svgEl.appendChild(line);
+  }
+
+  // Ascendant label
+  const ascA=degToWheel(data.ascendant.lon);
+  const ax=(R-28)*Math.cos(ascA),ay=(R-28)*Math.sin(ascA);
+  const ascTxt=document.createElementNS(NS,'text');
+  ascTxt.setAttribute('x',ax);ascTxt.setAttribute('y',ay+4);
+  ascTxt.setAttribute('text-anchor','middle');ascTxt.setAttribute('font-size','8');
+  ascTxt.setAttribute('fill','rgba(212,168,71,0.9)');ascTxt.setAttribute('font-family',"'Cinzel',serif");
+  ascTxt.textContent='ASC';
+  svgEl.appendChild(ascTxt);
+
+  // MC label
+  const mcA=degToWheel(data.mc);
+  const mx=(R-28)*Math.cos(mcA),my=(R-28)*Math.sin(mcA);
+  const mcTxt=document.createElementNS(NS,'text');
+  mcTxt.setAttribute('x',mx);mcTxt.setAttribute('y',my+4);
+  mcTxt.setAttribute('text-anchor','middle');mcTxt.setAttribute('font-size','8');
+  mcTxt.setAttribute('fill','rgba(212,168,71,0.9)');mcTxt.setAttribute('font-family',"'Cinzel',serif");
+  mcTxt.textContent='MC';
+  svgEl.appendChild(mcTxt);
+
+  // Decorative rays from center
+  for(let i=0;i<12;i+=3){
+    const a=degToWheel(i*30);
+    const x1=18*Math.cos(a),y1=18*Math.sin(a);
+    const x2=40*Math.cos(a),y2=40*Math.sin(a);
+    const ray=document.createElementNS(NS,'line');
+    ray.setAttribute('x1',x1.toFixed(1));ray.setAttribute('y1',y1.toFixed(1));
+    ray.setAttribute('x2',x2.toFixed(1));ray.setAttribute('y2',y2.toFixed(1));
+    ray.setAttribute('stroke','rgba(212,168,71,0.15)');ray.setAttribute('stroke-width','1');
+    svgEl.appendChild(ray);
+  }
+}
+
+// ─── Render Results ───
+function renderResults(data){
+  // Core trio
+  const sun=data.sun,moon=data.moon,asc=data.ascendant;
+  document.getElementById('core-trio').innerHTML=`
+    <div class="core-item"><div class="ci-label">太阳</div><div class="ci-value">${SIGNS_CN[sun.sign]}${Math.floor(sun.deg)}°</div><div class="ci-detail">${SIGN_SYM[sun.sign]}</div></div>
+    <div class="core-item"><div class="ci-label">月亮</div><div class="ci-value">${SIGNS_CN[moon.sign]}${Math.floor(moon.deg)}°</div><div class="ci-detail">${SIGN_SYM[moon.sign]}</div></div>
+    <div class="core-item"><div class="ci-label">上升</div><div class="ci-value">${SIGNS_CN[asc.sign]}${Math.floor(asc.deg)}°</div><div class="ci-detail">${SIGN_SYM[asc.sign]}</div></div>
+  `;
+
+  // Planets list
+  const html=PLANETS.map(p=>{
+    const d=p==='sun'?sun:p==='moon'?moon:data.positions.find(r=>r.name===p);
+    if(!d)return'';
+    const pf=Math.floor(d.deg),pm=Math.floor((d.deg%1)*60);
+    return`<div class="planet-row">
+      <span class="sym" style="color:${PLANET_COL[p]}">${PLANET_SYM[p]}</span>
+      <span class="pname">${PLANET_CN[p]}</span>
+      <span class="psign">${SIGNS_CN[d.sign]} ${SIGN_SYM[d.sign]}</span>
+      <span class="pdeg">${pf}°${pm}'</span>
+      <span class="phouse">${d.house}宫</span>
+    </div>`;
+  }).join('');
+  document.getElementById('planets-list').innerHTML=html;
+
+  // Aspects
+  const aspHtml=data.aspects.slice(0,16).map(a=>`
+    <div class="aspect-chip ${a.cls}">
+      <span class="a-sym">${a.sym}</span>
+      <span class="a-names">${PLANET_CN[a.p1]}·${PLANET_CN[a.p2]}</span>
+      <span class="a-orb">${a.orb.toFixed(1)}°</span>
+    </div>`).join('');
+  document.getElementById('aspects-grid').innerHTML=aspHtml||'<div style="color:var(--cream-dim);font-size:13px">暂无精确相位</div>';
+}
+
+// ─── Interpretation ───
+const SIGN_INTERPRET={
+  0:  {ele:'火',keyword:'勇敢、冲动、开创',trait:'行动力强，直接果断，但易冲动',career:'适合创业、运动、领导岗位'},
+  1:  {ele:'土',keyword:'稳定、务实、享受',trait:'脚踏实地，耐心持久，重视物质安全感',career:'适合金融、房地产、管理'},
+  2:  {ele:'风',keyword:'沟通、灵活、好奇',trait:'思维敏捷，善于交际，爱好广泛',career:'适合媒体、教育、销售、公关'},
+  3:  {ele:'水',keyword:'情感、保护、直觉',trait:'细腻敏感，重视家庭，直觉敏锐',career:'适合护理、餐饮、心理、艺术'},
+  4:  {ele:'火',keyword:'领导、骄傲、热情',trait:'自信慷慨，渴望被认可，具有领袖气质',career:'适合管理、演艺、政治、创业'},
+  5:  {ele:'土',keyword:'服务、秩序、分析',trait:'注重细节，追求完美，善于分析整理',career:'适合科研、医疗、财务、编辑'},
+  6:  {ele:'风',keyword:'平衡、和谐、社交',trait:'追求公平，人际圆融，美感强烈',career:'适合法律、艺术、设计、外交'},
+  7:  {ele:'水',keyword:'深刻、转化、隐秘',trait:'洞察力强，意志坚定，情感深沉',career:'适合研究、心理学、金融、幕后'},
+  8:  {ele:'火',keyword:'冒险、乐观、扩张',trait:'乐观开朗，热爱旅行，富有哲思',career:'适合教育、旅游、体育、出版'},
+  9:  {ele:'土',keyword:'责任、纪律、成就',trait:'自律严谨，耐心坚韧，有组织能力',career:'适合工程、法律、政治、管理'},
+  10: {ele:'风',keyword:'革新、独立、人道',trait:'独立思考，热爱自由，富有创造力',career:'适合科技、社会活动、发明、新兴行业'},
+  11: {ele:'水',keyword:'梦想、牺牲、直觉',trait:'富有同理心，艺术感强，敏感浪漫',career:'适合艺术、音乐、公益、医疗'},
+};
+const PLANET_INTERP={
+  sun:    '太阳代表核心自我与人生目标，是你生命力与意志力的核心体现。',
+  moon:   '月亮掌管情感与潜意识，反映你内在的安全感需求与情绪模式。',
+  mercury:'水星主管沟通与思维，代表你的表达方式、学习风格与信息处理能力。',
+  venus:  '金星主管爱情与美感，影响你对美的感受、人际关系与财务态度。',
+  mars:   '火星代表行动力与驱动力，是你面对挑战时的直接反应模式。',
+  jupiter:'木星代表扩张与幸运，影响你的人生哲学、成长机会与信念系统。',
+  saturn: '土星代表责任与限制，是你面对困难时的自律能力与长期成就的关键。',
+  uranus: '天王星代表突变与自由，是你的原创精神与渴望突破的内在力量。',
+  neptune:'海王星代表梦想与消融，影响你的灵感、理想以及与超越性事物的连接。',
+  pluto:  '冥王星代表转化与重生，是你面对生命深层考验时的力量来源。',
+};
+
+function renderInterpretation(data){
+  const sun=data.sun,moon=data.moon,asc=data.ascendant;
+  const sunS=SIGN_INTERPRET[sun.sign];
+  const moonS=SIGN_INTERPRET[moon.sign];
+  const ascS=SIGN_INTERPRET[asc.sign];
+  const sunEl=PLANET_INTERP.sun;
+  const moonEl=PLANET_INTERP.moon;
+  const strongSigns={};
+  data.positions.forEach(p=>{strongSigns[SIGN_INTERPRET[p.sign]?.ele]=(strongSigns[SIGN_INTERPRET[p.sign]?.ele]||0)+1});
+  const dominant=Object.entries(strongSigns).sort((a,b)=>b[1]-a[1])[0];
+  const dominantEle=dominant?dominant[0]:'火';
+  const elemBalance={火:0,土:0,风:0,水:0};
+  data.positions.forEach(p=>{const e=SIGN_INTERPRET[p.sign]?.ele;if(e)elemBalance[e]++});
+  const weak=Object.entries(elemBalance).sort((a,b)=>a[1]-b[1])[0][0];
+
+  const content=document.getElementById('interp-content');
+  content.innerHTML=`
+    <div class="interp-block">
+      <h4>🜂 太阳星座 — ${SIGNS_CN[sun.sign]}座 ${SIGN_SYM[sun.sign]}</h4>
+      <p>${sunEl}你的太阳落在${SIGNS_CN[sun.sign]}座，${sunS.trait}。${sunS.keyword}是你生命的核心主题。适合的发展方向：${sunS.career}。</p>
+    </div>
+    <div class="interp-block">
+      <h4>☽ 月亮星座 — ${SIGNS_CN[moon.sign]}座 ${SIGN_SYM[moon.sign]}</h4>
+      <p>${moonEl}月亮在${SIGNS_CN[moon.sign]}座意味着${moonS.trait}。你${moonS.keyword}，情感上需要${moonS.sign<3||moonS.sign>8?'安全感和稳定感':'新鲜感和变化感'}。</p>
+    </div>
+    <div class="interp-block">
+      <h4>↑ 上升星座 — ${SIGNS_CN[asc.sign]}座 ${SIGN_SYM[asc.sign]}</h4>
+      <p>上升星座是你给人的第一印象。${SIGNS_CN[asc.sign]}上升的你，${ascS.trait}。你在社交场合中往往展现出的特质是：${ascS.keyword}。</p>
+    </div>
+    <div class="interp-block">
+      <h4>�唍 元素能量分析</h4>
+      <p>你的星盘中<span style="color:var(--gold)">${dominantEle}元素</span>最为突出，${dominantEle==='火'?'行动导向、充满热情、独立自主':dominantEle==='土'?'务实稳健、注重实际、耐心持久':dominantEle==='风'?'思维活跃、善于沟通、爱好广泛':dominantEle==='水'?'情感细腻、直觉敏锐、同理心强':''}是你性格的主导面向。相对而言，<span style="color:var(--red)">${weak}元素</span>较为内敛，这可能是你需要有意识发展的领域。</p>
+    </div>
+    <div class="interp-block">
+      <h4>✦ 综合提示</h4>
+      <p>你的星盘揭示了一个${sunS.ele}${moonS.ele}特质兼具的独特个性：既${sunS.trait.slice(0,6)}，也${moonS.trait.slice(0,8)}。</p>
+    </div>
+  `;
+}
+
+// ─── Main ───
+function generateChart(){
+  const name=document.getElementById('inp-name').value.trim()||'无名';
+  const date=document.getElementById('inp-date').value;
+  const time=document.getElementById('inp-time').value;
+  const lat=parseFloat(document.getElementById('inp-lat').value)||31.23;
+  const lng=parseFloat(document.getElementById('inp-lng').value)||121.47;
+
+  if(!date||!time){alert('请填写出生日期和时间');return;}
+
+  const data=calculateChart(date,time,lat,lng);
+  const svg=document.getElementById('wheel-svg');
+  drawWheel(data,svg);
+
+  document.getElementById('placeholder').classList.add('hidden');
+  document.getElementById('wheel-container').classList.remove('hidden');
+  document.getElementById('results-grid').classList.remove('hidden');
+  document.getElementById('interp-section').classList.remove('hidden');
+
+  renderResults(data);
+  renderInterpretation(data);
+
+  document.getElementById('wheel-container').classList.add('fade-up');
+  document.getElementById('results-grid').classList.add('fade-up');
+  document.getElementById('interp-section').classList.add('fade-up');
+
+  document.getElementById('wheel-container').scrollIntoView({behavior:'smooth',block:'center'});
+}
+</script>
+</body>
+</html>
