@@ -252,12 +252,16 @@ function getPlanetaryLonLat(name,ML,M,T){
   if(name==='moon'){
     const Mm=M.moon*Math.PI/180;
     const l=ML.moon*Math.PI/180;
-    const F=(93.272099+483202.017527*T)*Math.PI/180;
-    const om=(125.04452-1934.136*T)*Math.PI/180;
+    // F = argument of latitude = moon mean longitude - ascending node mean longitude
+    // 483202 is in arcsec/century, divide by 3600 to get degrees/century
+    const F_degrees = (93.272099 + 483202.017527 * T / 3600);
+    const F = F_degrees * Math.PI / 180;
     const mSun=M.sun*Math.PI/180;
-    const lon=ML.moon+6.289*Math.sin(Mm)+1.274*Math.sin(2*l-Mm)+0.658*Math.sin(2*l)+0.214*Math.sin(2*Mm)-0.186*Math.sin(mSun)-0.114*Math.sin(2*F);
-    const lat=5.128*Math.sin(F)+0.281*Math.sin(Mm+F)+0.278*Math.sin(Mm-F);
-    return[(lon*180/Math.PI+360)%360,lat*180/Math.PI];
+    // Longitude in degrees (mean longitude + major perturbations)
+    const lon = ML.moon + 6.289*Math.sin(Mm) + 1.274*Math.sin(2*l-Mm) + 0.658*Math.sin(2*l) + 0.214*Math.sin(2*Mm) - 0.186*Math.sin(mSun) - 0.114*Math.sin(2*F);
+    // Latitude in degrees (simplified)
+    const lat = 5.128 * Math.sin(F);
+    return[(lon%360+360)%360,lat];
   }else{
     const eccs={sun:0.016708634,venus:0.006773,mercury:0.205630,venus_b:0.0067,mars:0.093405,jupiter:0.048392,saturn:0.054546,uranus:0.047218,neptune:0.008606};
     const e=eccs[name]||0.05;
